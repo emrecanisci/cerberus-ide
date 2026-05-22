@@ -5,11 +5,6 @@ import { CerberusConfig, CerberusModelDescriptor } from './config';
 /**
  * Adapter from VS Code's LanguageModelChatProvider proposed API to the
  * Cerberus chat-completions stream.
- *
- * The proposed API surface is still evolving in upstream VS Code. We type
- * against `any` for the provider hook so that the extension keeps building
- * across minor changes in the proposal — it is the responsibility of the
- * `enabledApiProposals` entry in package.json to gate availability.
  */
 export class CerberusChatProvider {
 	private readonly client: CerberusClient;
@@ -23,7 +18,7 @@ export class CerberusChatProvider {
 
 	get metadata() {
 		return {
-			vendor: 'aiwebmodel',
+			vendor: 'cerberus',
 			name: this.model.label,
 			family: this.model.family,
 			version: '1',
@@ -35,68 +30,50 @@ export class CerberusChatProvider {
 
 	async provideLanguageModelResponse(
 		messages: ReadonlyArray<unknown>,
-		_options: unknown,
+		options: { mode?: string } | unknown,
 		_extensionId: string,
 		progress: vscode.Progress<unknown>,
 		token: vscode.CancellationToken,
 	): Promise<void> {
 		const normalized = messages.map(toChatMessage).filter((m): m is ChatMessage => !!m);
+		const mode = typeof options === 'object' && options && 'mode' in options
+			? String((options as any).mode ?? '') || undefined
+			: undefined;
 
 		try {
 			for await (const chunk of this.client.streamChat(
-				{ model: this.model.id, messages: normalized },
+				{ model: this.model.id, messages: normalized, mode },
 				token,
 			)) {
-				if (token.isCancellationRequested) {
-					return;
-				}
-				if (chunk.delta) {
-					// LanguageModelTextPart shape: { value: string }. We pass a
-					// plain object so the renderer-side proxy can clone it.
-					progress.report({ index: 0, part: { value: chunk.delta } } as unknown);
-				}
+				if (token.isCancellationRequested) return;
+				if (chunk.delta) progress.report({ index: 0, part: { value: chunk.delta } } as unknown);
 			}
 		} catch (err) {
-			if (err instanceof CerberusAuthError) {
-				void promptForSignIn();
-			}
+			if (err instanceof CerberusAuthError) void promptForSignIn();
 			throw err;
 		}
 	}
 
 	async provideTokenCount(text: string | unknown): Promise<number> {
-		const value = typeof text === 'string'
-			? text
-			: extractTextFromMessage(text);
+		const value = typeof text === 'string' ? text : extractTextFromMessage(text);
 		return this.client.countTokens(value);
 	}
 }
 
 function toChatMessage(raw: unknown): ChatMessage | undefined {
-	if (!raw || typeof raw !== 'object') {
-		return undefined;
-	}
-	const m = raw as { role?: unknown; content?: unknown; name?: unknown };
+	if (!raw || typeof raw !== 'object') return undefined;
+	const m = raw as { role?: unknown; content?: unknown };
 	const role = mapRole(m.role);
-	if (!role) {
-		return undefined;
-	}
-	return {
-		role,
-		content: extractTextFromMessage(m),
-		name: typeof m.name === 'string' ? m.name : undefined,
-	};
+	if (!role) return undefined;
+	return { role, content: extractTextFromMessage(m) };
 }
 
 function mapRole(role: unknown): ChatMessage['role'] | undefined {
 	if (typeof role === 'string') {
 		const lower = role.toLowerCase();
-		if (lower === 'system' || lower === 'user' || lower === 'assistant' || lower === 'tool') {
-			return lower;
-		}
+		if (lower === 'system' || lower === 'user' || lower === 'assistant') return lower;
 	}
 	if (typeof role === 'number') {
-		// LanguageModelChatMessageRole enum: User=1, Assistant=2, System=3.
 		switch (role) {
 			case 1: return 'user';
 			case 2: return 'assistant';
@@ -107,36 +84,27 @@ function mapRole(role: unknown): ChatMessage['role'] | undefined {
 }
 
 function extractTextFromMessage(message: unknown): string {
-	if (!message || typeof message !== 'object') {
-		return '';
-	}
+	if (!message || typeof message !== 'object') return '';
 	const content = (message as { content?: unknown }).content;
-	if (typeof content === 'string') {
-		return content;
-	}
+	if (typeof content === 'string') return content;
 	if (Array.isArray(content)) {
-		return content
-			.map(part => {
-				if (typeof part === 'string') {
-					return part;
-				}
-				if (part && typeof part === 'object' && 'value' in part) {
-					const value = (part as { value: unknown }).value;
-					return typeof value === 'string' ? value : '';
-				}
-				return '';
-			})
-			.join('');
+		return content.map(part => {
+			if (typeof part === 'string') return part;
+			if (part && typeof part === 'object' && 'value' in part) {
+				const value = (part as { value: unknown }).value;
+				return typeof value === 'string' ? value : '';
+			}
+			return '';
+		}).join('');
 	}
 	return '';
 }
 
 async function promptForSignIn(): Promise<void> {
 	const action = await vscode.window.showWarningMessage(
-		'Cerberus AI needs an API key to talk to the gateway.',
-		'Sign In',
+		'Cerberus IDE oturumu yok.', 'Giriş yap',
 	);
-	if (action === 'Sign In') {
+	if (action === 'Giriş yap') {
 		await vscode.commands.executeCommand('cerberusAi.signIn');
 	}
 }

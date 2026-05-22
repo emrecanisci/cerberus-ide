@@ -42,7 +42,7 @@ setpath_json() {
 : "${CERBERUS_ISSUES_URL:=https://github.com/${GH_REPO_PATH}/issues/new}"
 : "${CERBERUS_LICENSE_URL:=https://github.com/${GH_REPO_PATH}/blob/master/LICENSE}"
 : "${CERBERUS_RELEASES_URL:=https://github.com/${GH_REPO_PATH}/releases}"
-: "${CERBERUS_AI_API_BASE_URL:=https://ide.aiwebmodel.com/v1}"
+: "${CERBERUS_AI_API_BASE_URL:=https://ide.aiwebmodel.com}"
 
 setpath "product" "checksumFailMoreInfoUrl" "${CERBERUS_DOCS_URL}/checksum"
 setpath "product" "documentationUrl" "${CERBERUS_DOCS_URL}"
@@ -53,7 +53,7 @@ setpath "product" "keyboardShortcutsUrlLinux" "${CERBERUS_DOCS_URL}/shortcuts/li
 setpath "product" "keyboardShortcutsUrlMac" "${CERBERUS_DOCS_URL}/shortcuts/mac"
 setpath "product" "keyboardShortcutsUrlWin" "${CERBERUS_DOCS_URL}/shortcuts/windows"
 setpath "product" "licenseUrl" "${CERBERUS_LICENSE_URL}"
-setpath_json "product" "linkProtectionTrustedDomains" "[\"https://open-vsx.org\", \"${CERBERUS_HOMEPAGE_URL}\", \"${CERBERUS_AI_API_BASE_URL%/v1}\"]"
+setpath_json "product" "linkProtectionTrustedDomains" "[\"https://open-vsx.org\", \"${CERBERUS_HOMEPAGE_URL}\", \"${CERBERUS_AI_API_BASE_URL}\"]"
 setpath "product" "releaseNotesUrl" "${CERBERUS_DOCS_URL}/release-notes"
 setpath "product" "reportIssueUrl" "${CERBERUS_ISSUES_URL}"
 setpath "product" "requestFeatureUrl" "${CERBERUS_DOCS_URL}/feature-requests"
@@ -127,7 +127,7 @@ setpath_json "product" "tunnelApplicationConfig" '{}'
 # Cerberus AI provider config (consumed by built-in cerberus-ai extension)
 setpath "product" "cerberusAiApiBaseUrl" "${CERBERUS_AI_API_BASE_URL}"
 setpath "product" "cerberusAiHomepageUrl" "${CERBERUS_HOMEPAGE_URL}"
-setpath_json "product" "cerberusAiDefaultModels" '[{"id":"cerberus-coder","label":"Cerberus Coder","family":"cerberus","capabilities":["chat","completions"]},{"id":"cerberus-thinker","label":"Cerberus Thinker","family":"cerberus","capabilities":["chat"]}]'
+setpath_json "product" "cerberusAiDefaultModels" '[{"id":"claude-sonnet-4-6","label":"Claude Sonnet 4.6","family":"cerberus","capabilities":["chat","completions"]}]'
 
 jsonTmp=$( jq -s '.[0] * .[1]' product.json ../product.json )
 echo "${jsonTmp}" > product.json && unset jsonTmp

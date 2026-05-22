@@ -6,9 +6,9 @@ This extension is shipped in-the-box and cannot be uninstalled, but it can be di
 
 ## How it works
 
-- On activation it reads `cerberusAiApiBaseUrl` and `cerberusAiDefaultModels` from `product.json`.
-- For each model in `cerberusAiDefaultModels` it registers a `vscode.LanguageModelChatProvider`.
-- Requests are streamed over Server-Sent Events to `${apiBaseUrl}/chat/completions` (OpenAI-compatible).
+- On activation it reads `cerberusAiApiBaseUrl` from `product.json` (override via the `cerberusAi.apiBaseUrl` user setting).
+- It calls `GET /api/models` against the panel and registers each active model as a `vscode.LanguageModelChatProvider`.
+- Chat requests are streamed over Server-Sent Events to `POST /api/ai/chat` (Anthropic-compatible Messages API).
 - The API key is stored via `vscode.SecretStorage` (`cerberusAi.apiKey`).
 
 ## Settings
