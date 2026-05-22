@@ -18,27 +18,63 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onView:cerberusAi.sidebar"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cerberusAi",
+          "title": "Cerberus AI",
+          "icon": "media/cerberus-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "cerberusAi": [
+        {
+          "type": "webview",
+          "id": "cerberusAi.sidebar",
+          "name": "Cerberus AI",
+          "icon": "media/cerberus-icon.svg",
+          "contextualTitle": "Cerberus AI"
+        }
+      ]
+    },
     "configuration": {
       "title": "Cerberus AI",
       "properties": {
         "cerberusAi.apiBaseUrl": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Base URL for the Cerberus AI gateway. Leave empty to use the value baked into `product.json` (`cerberusAiApiBaseUrl`)."
+          "markdownDescription": "Base URL for the Cerberus IDE panel. Leave empty to use the value baked into `product.json` (`cerberusAiApiBaseUrl`)."
         },
         "cerberusAi.defaultModel": {
           "type": "string",
-          "default": "cerberus-coder",
+          "default": "claude-sonnet-4-6",
           "description": "Model id to select by default in chat surfaces."
         },
         "cerberusAi.requestTimeoutMs": {
           "type": "number",
           "default": 120000,
           "description": "Per-request timeout in milliseconds."
+        },
+        "cerberusAi.inlineCompletions.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Cerberus Tab inline completions (Cursor Tab benzeri)"
+        },
+        "cerberusAi.inlineCompletions.model": {
+          "type": "string",
+          "default": "",
+          "description": "Inline completions için kullanılacak model id (boşsa varsayılan model)"
+        },
+        "cerberusAi.defaultMode": {
+          "type": "string",
+          "default": "agent",
+          "description": "Sidebar chat'te varsayılan mod (agent / plan / ask / debug / composer / multitask)"
         }
       }
     },
@@ -57,8 +93,45 @@
         "command": "cerberusAi.setApiBaseUrl",
         "title": "Cerberus AI: Set API Base URL",
         "category": "Cerberus AI"
+      },
+      {
+        "command": "cerberusAi.refreshModels",
+        "title": "Cerberus AI: Refresh Models",
+        "category": "Cerberus AI"
+      },
+      {
+        "command": "cerberusAi.openSidebar",
+        "title": "Cerberus AI: Open Sidebar",
+        "category": "Cerberus AI"
+      },
+      {
+        "command": "cerberusAi.inlineEdit",
+        "title": "Cerberus AI: Inline Edit",
+        "category": "Cerberus AI"
       }
-    ]
+    ],
+    "keybindings": [
+      {
+        "command": "cerberusAi.inlineEdit",
+        "key": "ctrl+k",
+        "mac": "cmd+k",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "cerberusAi.openSidebar",
+        "key": "ctrl+l",
+        "mac": "cmd+l"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "cerberusAi.inlineEdit",
+          "group": "1_modification@99",
+          "when": "editorHasSelection"
+        }
+      ]
+    }
   },
   "scripts": {
     "compile": "tsc -p ./",
@@ -71,6 +144,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/aiwebmodel/cerberus.git"
+    "url": "https://github.com/emrecanisci/cerberus-ide.git"
   }
 }

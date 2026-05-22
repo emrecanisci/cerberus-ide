@@ -49,6 +49,15 @@ export class CerberusConfig {
 		return Math.max(1_000, value);
 	}
 
+	get inlineCompletionsEnabled(): boolean {
+		return vscode.workspace.getConfiguration('cerberusAi').get<boolean>('inlineCompletions.enabled', true);
+	}
+
+	get inlineCompletionModel(): string | undefined {
+		const v = vscode.workspace.getConfiguration('cerberusAi').get<string>('inlineCompletions.model', '').trim();
+		return v || undefined;
+	}
+
 	get models(): ReadonlyArray<CerberusModelDescriptor> {
 		const fromProduct = this.product().cerberusAiDefaultModels;
 		if (fromProduct && fromProduct.length > 0) return fromProduct;

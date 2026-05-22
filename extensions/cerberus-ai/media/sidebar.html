@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+	<meta charset="UTF-8" />
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' ${cspSource}; script-src 'nonce-${nonce}'; img-src 'self' data: ${cspSource};">
+	<style>
+		:root {
+			--bg: var(--vscode-sideBar-background, #0e0f1a);
+			--bg-soft: rgba(255, 255, 255, 0.03);
+			--bg-card: rgba(255, 255, 255, 0.05);
+			--bg-card-hover: rgba(167, 139, 250, 0.10);
+			--border: rgba(255, 255, 255, 0.08);
+			--text: var(--vscode-foreground, #e6e9f5);
+			--muted: rgba(255, 255, 255, 0.55);
+			--subtle: rgba(255, 255, 255, 0.35);
+			--accent: #a78bfa;
+			--accent-strong: #8b5cf6;
+			--ok: #4ade80;
+			--warn: #fbbf24;
+			--danger: #f87171;
+			--mono: var(--vscode-editor-font-family, ui-monospace, monospace);
+		}
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		html, body { height: 100%; }
+		body {
+			font-family: var(--vscode-font-family, "Inter", system-ui, sans-serif);
+			color: var(--text);
+			background: transparent;
+			font-size: 12.5px;
+			line-height: 1.45;
+			display: flex;
+			flex-direction: column;
+			min-height: 100vh;
+		}
+		header.brand {
+			padding: 14px 14px 10px;
+			border-bottom: 1px solid var(--border);
+			font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+			color: var(--subtle); font-weight: 600;
+		}
+		main {
+			flex: 1; overflow-y: auto; padding: 16px 14px 8px;
+			display: flex; flex-direction: column; gap: 18px;
+		}
+		.greeting {
+			text-align: center;
+			padding: 14px 0 6px;
+		}
+		.greeting h1 {
+			font-size: 18px; font-weight: 600;
+			letter-spacing: -0.01em;
+			margin-bottom: 4px;
+		}
+		.greeting p {
+			color: var(--muted); font-size: 12px;
+		}
+		.actions {
+			display: grid; gap: 8px;
+			grid-template-columns: 1fr 1fr;
+		}
+		.action {
+			background: var(--bg-card);
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			padding: 12px;
+			cursor: pointer;
+			transition: background 0.12s, border-color 0.12s, transform 0.12s;
+			display: flex; flex-direction: column; gap: 6px;
+			text-align: left;
+		}
+		.action:hover {
+			background: var(--bg-card-hover);
+			border-color: rgba(167, 139, 250, 0.3);
+			transform: translateY(-1px);
+		}
+		.action .icon {
+			width: 22px; height: 22px;
+			display: flex; align-items: center; justify-content: center;
+			color: var(--accent); font-size: 16px;
+		}
+		.action .title {
+			font-size: 12.5px; font-weight: 600; color: var(--text);
+		}
+		.action .desc {
+			font-size: 10.5px; color: var(--muted); line-height: 1.35;
+		}
+
+		.section-label {
+			font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+			color: var(--subtle); font-weight: 600;
+			margin-top: 4px;
+		}
+		.activity { display: flex; flex-direction: column; gap: 8px; }
+		.activity .row {
+			display: flex; align-items: center; gap: 8px;
+			padding: 7px 9px;
+			background: var(--bg-soft);
+			border-radius: 6px;
+			font-size: 11.5px;
+			border: 1px solid transparent;
+		}
+		.activity .row .ico { font-size: 12px; flex-shrink: 0; }
+		.activity .row .text { flex: 1; color: var(--text); }
+		.activity .row .text .file { color: var(--accent); font-family: var(--mono); font-size: 11px; }
+		.activity .row .when { color: var(--subtle); font-size: 10.5px; flex-shrink: 0; }
+		.activity .empty { color: var(--subtle); font-size: 11px; padding: 10px; text-align: center; }
+
+		.composer {
+			border-top: 1px solid var(--border);
+			padding: 10px 12px 12px;
+			background: var(--bg-soft);
+		}
+		.composer .input-wrap {
+			background: rgba(0, 0, 0, 0.25);
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			padding: 8px 10px;
+			display: flex; flex-direction: column; gap: 6px;
+		}
+		.composer .input-wrap:focus-within {
+			border-color: var(--accent);
+		}
+		.composer textarea {
+			background: transparent;
+			border: 0;
+			color: var(--text);
+			resize: none;
+			font: inherit;
+			min-height: 18px;
+			max-height: 120px;
+			outline: none;
+		}
+		.composer textarea::placeholder { color: var(--subtle); }
+		.composer .row {
+			display: flex; align-items: center; justify-content: space-between;
+			gap: 8px;
+		}
+		.composer .model-pick {
+			display: flex; align-items: center; gap: 4px;
+			color: var(--muted); font-size: 11px;
+			cursor: pointer; user-select: none;
+			padding: 3px 6px; border-radius: 5px;
+		}
+		.composer .model-pick:hover { background: rgba(255, 255, 255, 0.05); }
+		.composer .model-pick .arrow { font-size: 9px; opacity: 0.7; }
+		.composer .send {
+			background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+			color: #fff;
+			border: 0;
+			width: 26px; height: 26px;
+			border-radius: 6px;
+			display: flex; align-items: center; justify-content: center;
+			cursor: pointer;
+		}
+		.composer .send:disabled { opacity: 0.4; cursor: not-allowed; }
+		.composer .send svg { width: 14px; height: 14px; }
+		.context-line {
+			display: flex; align-items: center; gap: 5px;
+			color: var(--subtle); font-size: 10.5px;
+			margin-top: 6px;
+		}
+		.context-line .ctx-icon { font-size: 10px; }
+
+		.chat-stream {
+			display: flex; flex-direction: column; gap: 10px;
+		}
+		.chat-msg {
+			background: var(--bg-card);
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			padding: 10px 12px;
+			font-size: 12px;
+			white-space: pre-wrap;
+			word-break: break-word;
+			line-height: 1.5;
+		}
+		.chat-msg.user { border-left: 2px solid var(--accent); }
+		.chat-msg.assistant { border-left: 2px solid var(--ok); }
+		.chat-msg .role {
+			font-size: 9.5px; letter-spacing: 0.15em; text-transform: uppercase;
+			color: var(--subtle); font-weight: 600; margin-bottom: 4px;
+		}
+		.tool-line {
+			display: flex; align-items: center; gap: 6px;
+			padding: 5px 9px;
+			background: rgba(167, 139, 250, 0.07);
+			border: 1px solid rgba(167, 139, 250, 0.2);
+			border-radius: 6px;
+			font-family: var(--mono);
+			font-size: 11px;
+			color: var(--muted);
+		}
+		.tool-line.ok { border-color: rgba(74, 222, 128, 0.25); }
+		.tool-line.err { border-color: rgba(248, 113, 113, 0.3); color: var(--danger); }
+		.tool-line .tag { font-size: 10px; }
+		.chat-msg pre {
+			background: rgba(0,0,0,0.3); border-radius: 4px;
+			padding: 8px 10px; margin: 6px 0;
+			font-family: var(--mono); font-size: 11.5px;
+			overflow-x: auto;
+		}
+		.chat-msg code { font-family: var(--mono); }
+
+		.banner {
+			background: rgba(248, 113, 113, 0.1);
+			border: 1px solid rgba(248, 113, 113, 0.3);
+			color: var(--danger);
+			border-radius: 6px;
+			padding: 8px 10px;
+			font-size: 11.5px;
+		}
+		.banner.warn {
+			background: rgba(251, 191, 36, 0.1);
+			border-color: rgba(251, 191, 36, 0.3);
+			color: var(--warn);
+		}
+		.banner button {
+			margin-top: 6px;
+			background: transparent;
+			border: 1px solid currentColor;
+			color: inherit;
+			padding: 4px 10px;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 11px;
+		}
+	</style>
+</head>
+<body>
+	<header class="brand">
+		<span>CERBERUS AI</span>
+		<button id="new-chat" title="Yeni sohbet" style="background:transparent;border:0;color:var(--subtle);cursor:pointer;font-size:14px;float:right;margin-top:-2px">＋</button>
+	</header>
+	<main id="main">
+		<div id="auth-banner" hidden></div>
+
+		<div class="greeting" id="greeting">
+			<h1>Hello, Developer 👋</h1>
+			<p>How can I help you today?</p>
+		</div>
+
+		<section id="actions-section">
+			<div class="actions" id="actions">
+				<button class="action" data-action="explain">
+					<div class="icon">📖</div>
+					<div class="title">Explain Code</div>
+					<div class="desc">Understand selected code in detail</div>
+				</button>
+				<button class="action" data-action="generate">
+					<div class="icon">✨</div>
+					<div class="title">Generate Code</div>
+					<div class="desc">Generate code from natural language</div>
+				</button>
+				<button class="action" data-action="refactor">
+					<div class="icon">🔧</div>
+					<div class="title">Refactor Code</div>
+					<div class="desc">Improve code structure and quality</div>
+				</button>
+				<button class="action" data-action="findBugs">
+					<div class="icon">🐛</div>
+					<div class="title">Find Bugs</div>
+					<div class="desc">Analyze and find bugs in your code</div>
+				</button>
+				<button class="action" data-action="writeTests">
+					<div class="icon">🧪</div>
+					<div class="title">Write Tests</div>
+					<div class="desc">Generate unit tests for your code</div>
+				</button>
+				<button class="action" data-action="documentation">
+					<div class="icon">📄</div>
+					<div class="title">Documentation</div>
+					<div class="desc">Generate docs for your code</div>
+				</button>
+			</div>
+		</section>
+
+		<section id="activity-section">
+			<div class="section-label">RECENT ACTIVITY</div>
+			<div class="activity" id="activity">
+				<div class="empty">Henüz aktivite yok. Bir aksiyon seç veya soru sor.</div>
+			</div>
+		</section>
+
+		<section id="chat-section" hidden>
+			<div class="chat-stream" id="chat-stream"></div>
+		</section>
+	</main>
+
+	<footer class="composer">
+		<div class="input-wrap">
+			<textarea id="input" placeholder="Ask Cerberus AI anything..." rows="1"></textarea>
+			<div class="row">
+				<div class="model-pick" id="mode-pick" title="Mod">
+					<span id="mode-icon">⚙</span>
+					<span id="mode-label">agent</span>
+					<span class="arrow">▾</span>
+				</div>
+				<div class="model-pick" id="model-pick">
+					<span id="model-label">Loading…</span>
+					<span class="arrow">▾</span>
+				</div>
+				<button class="send" id="send" title="Send" disabled>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 2L11 13"></path>
+						<path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+					</svg>
+				</button>
+			</div>
+		</div>
+		<div class="context-line">
+			<span class="ctx-icon">📎</span>
+			<span id="context-text">Active file context</span>
+		</div>
+	</footer>
+
+	<script nonce="${nonce}">
+		const vscode = acquireVsCodeApi();
+		const $ = (id) => document.getElementById(id);
+		let currentAssistantNode = null;
+		let currentModel = null;
+
+		const input = $('input');
+		const send = $('send');
+		const modelLabel = $('model-label');
+		const modelPick = $('model-pick');
+		const chatStream = $('chat-stream');
+		const chatSection = $('chat-section');
+		const greeting = $('greeting');
+		const actionsSection = $('actions-section');
+		const activity = $('activity');
+		const authBanner = $('auth-banner');
+		const contextText = $('context-text');
+
+		// auto-grow textarea
+		input.addEventListener('input', () => {
+			input.style.height = 'auto';
+			input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+			send.disabled = !input.value.trim();
+		});
+		input.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter' && !e.shiftKey) {
+				e.preventDefault();
+				submit();
+			}
+		});
+		send.addEventListener('click', submit);
+
+		modelPick.addEventListener('click', () => vscode.postMessage({ type: 'pickModel' }));
+		document.getElementById('mode-pick').addEventListener('click', () => vscode.postMessage({ type: 'pickMode' }));
+
+		document.querySelectorAll('.action').forEach(btn => {
+			btn.addEventListener('click', () => {
+				vscode.postMessage({ type: 'action', action: btn.dataset.action });
+			});
+		});
+
+		function submit() {
+			const text = input.value.trim();
+			if (!text) return;
+			input.value = '';
+			input.style.height = 'auto';
+			send.disabled = true;
+			vscode.postMessage({ type: 'send', text });
+		}
+
+		function showChat() {
+			greeting.hidden = true;
+			actionsSection.hidden = true;
+			chatSection.hidden = false;
+		}
+
+		function appendMessage(role, content) {
+			const node = document.createElement('div');
+			node.className = 'chat-msg ' + role;
+			node.innerHTML = '<div class="role">' + (role === 'user' ? 'You' : 'Cerberus') + '</div><div class="body"></div>';
+			node.querySelector('.body').textContent = content;
+			chatStream.appendChild(node);
+			node.scrollIntoView({ behavior: 'smooth', block: 'end' });
+			return node;
+		}
+
+		function appendActivity(item) {
+			if (activity.querySelector('.empty')) activity.innerHTML = '';
+			const row = document.createElement('div');
+			row.className = 'row';
+			row.innerHTML = ''
+				+ '<div class="ico">' + escapeHtml(item.icon || '✨') + '</div>'
+				+ '<div class="text">' + escapeHtml(item.label) + (item.file ? ' <span class="file">' + escapeHtml(item.file) + '</span>' : '') + '</div>'
+				+ '<div class="when">' + escapeHtml(item.when || 'just now') + '</div>';
+			activity.insertBefore(row, activity.firstChild);
+			while (activity.children.length > 8) activity.removeChild(activity.lastChild);
+		}
+
+		function escapeHtml(s) {
+			return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+		}
+
+		document.getElementById('new-chat').onclick = () => vscode.postMessage({ type: 'newChat' });
+
+		window.addEventListener('message', (event) => {
+			const msg = event.data;
+			switch (msg.type) {
+				case 'init':
+					currentModel = msg.model;
+					modelLabel.textContent = msg.model?.label || 'No model';
+					if (msg.mode) {
+						document.getElementById('mode-label').textContent = msg.mode;
+					}
+					if (msg.activeFile) contextText.textContent = msg.activeFile;
+					if (msg.recentActivity?.length) {
+						activity.innerHTML = '';
+						msg.recentActivity.forEach(appendActivity);
+					}
+					if (msg.authState === 'signed-out') showAuthBanner();
+					break;
+				case 'modelChanged':
+					currentModel = msg.model;
+					modelLabel.textContent = msg.model?.label || 'No model';
+					break;
+				case 'modeChanged':
+					document.getElementById('mode-label').textContent = msg.mode;
+					break;
+				case 'activeFile':
+					contextText.textContent = msg.file || 'Active file context';
+					break;
+				case 'cleared':
+					chatStream.innerHTML = '';
+					currentAssistantNode = null;
+					send.disabled = false;
+					greeting.hidden = false;
+					actionsSection.hidden = false;
+					chatSection.hidden = true;
+					break;
+				case 'userMessage':
+					showChat();
+					appendMessage('user', msg.text);
+					break;
+				case 'assistantStart':
+					currentAssistantNode = appendMessage('assistant', '');
+					break;
+				case 'assistantDelta':
+					if (currentAssistantNode) {
+						const body = currentAssistantNode.querySelector('.body');
+						body.textContent = (body.textContent || '') + msg.delta;
+						currentAssistantNode.scrollIntoView({ behavior: 'smooth', block: 'end' });
+					}
+					break;
+				case 'toolStart':
+					appendToolLine(msg.summary, 'pending');
+					break;
+				case 'toolEnd':
+					updateLastToolLine(msg.ok, msg.detail);
+					break;
+				case 'assistantDone':
+					currentAssistantNode = null;
+					send.disabled = false;
+					break;
+				case 'error':
+					if (currentAssistantNode) {
+						const body = currentAssistantNode.querySelector('.body');
+						body.innerHTML = '<span style="color:var(--danger)">' + escapeHtml(msg.message) + '</span>';
+						currentAssistantNode = null;
+					} else {
+						appendMessage('assistant', 'Hata: ' + msg.message);
+					}
+					send.disabled = false;
+					break;
+				case 'activity':
+					appendActivity(msg.item);
+					break;
+				case 'auth':
+					if (msg.state === 'signed-out') showAuthBanner();
+					else hideAuthBanner();
+					break;
+			}
+		});
+
+		function appendToolLine(summary, state) {
+			showChat();
+			const node = document.createElement('div');
+			node.className = 'tool-line ' + (state === 'pending' ? '' : state);
+			node.dataset.summary = summary;
+			node.innerHTML = '<span class="tag">⚡</span><span class="text">' + escapeHtml(summary) + '</span><span class="status">…</span>';
+			chatStream.appendChild(node);
+			node.scrollIntoView({ behavior: 'smooth', block: 'end' });
+		}
+		function updateLastToolLine(ok, detail) {
+			const lines = chatStream.querySelectorAll('.tool-line');
+			const node = lines[lines.length - 1];
+			if (!node) return;
+			node.classList.remove('pending');
+			node.classList.add(ok ? 'ok' : 'err');
+			const status = node.querySelector('.status');
+			if (status) status.textContent = ok ? '✓' : '✕';
+			if (!ok && detail) {
+				const detailNode = document.createElement('div');
+				detailNode.style.cssText = 'margin-top:4px;font-size:10.5px;color:var(--danger);white-space:pre-wrap;';
+				detailNode.textContent = detail.length > 200 ? detail.slice(0, 200) + '…' : detail;
+				node.appendChild(detailNode);
+			}
+		}
+
+		function showAuthBanner() {
+			authBanner.hidden = false;
+			authBanner.className = 'banner warn';
+			authBanner.innerHTML = '<div>Cerberus IDE oturumu yok. Devam etmek için giriş yap.</div><button id="signInBtn">Giriş yap</button>';
+			document.getElementById('signInBtn').onclick = () => vscode.postMessage({ type: 'signIn' });
+		}
+		function hideAuthBanner() { authBanner.hidden = true; authBanner.innerHTML = ''; }
+
+		vscode.postMessage({ type: 'ready' });
+	</script>
+</body>
+</html>

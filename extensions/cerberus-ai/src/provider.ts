@@ -4,7 +4,9 @@ import { CerberusConfig, CerberusModelDescriptor } from './config';
 
 /**
  * Adapter from VS Code's LanguageModelChatProvider proposed API to the
- * Cerberus chat-completions stream.
+ * Cerberus chat-completions stream. Used by built-in chat surfaces that
+ * call vscode.lm.* directly. The richer agent loop (with tools) lives in
+ * `agent.ts` and is driven from the sidebar webview.
  */
 export class CerberusChatProvider {
 	private readonly client: CerberusClient;
@@ -41,12 +43,14 @@ export class CerberusChatProvider {
 			: undefined;
 
 		try {
-			for await (const chunk of this.client.streamChat(
+			for await (const ev of this.client.streamChat(
 				{ model: this.model.id, messages: normalized, mode },
 				token,
 			)) {
 				if (token.isCancellationRequested) return;
-				if (chunk.delta) progress.report({ index: 0, part: { value: chunk.delta } } as unknown);
+				if (ev.kind === 'text' && ev.delta) {
+					progress.report({ index: 0, part: { value: ev.delta } } as unknown);
+				}
 			}
 		} catch (err) {
 			if (err instanceof CerberusAuthError) void promptForSignIn();

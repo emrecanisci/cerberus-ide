@@ -1,11 +1,18 @@
 import * as vscode from 'vscode';
 import { CerberusConfig } from './config';
 import { CerberusChatProvider } from './provider';
+import { CerberusSidebarProvider } from './sidebar';
+import { CerberusInlineCompletionProvider } from './inline-completion';
+import { CerberusClient } from './client';
+import { runInlineEdit } from './inline-edit';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	const config = new CerberusConfig(context.secrets);
+	const client = new CerberusClient(config);
 
-	registerCommands(context, config);
+	registerCommands(context, config, client);
+	registerSidebar(context, config);
+	registerInlineCompletions(context, config, client);
 	await registerProviders(context, config);
 
 	context.subscriptions.push(
@@ -17,7 +24,34 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 export function deactivate(): void { }
 
-function registerCommands(context: vscode.ExtensionContext, config: CerberusConfig): void {
+function registerSidebar(context: vscode.ExtensionContext, config: CerberusConfig): void {
+	const provider = new CerberusSidebarProvider(context, config);
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(CerberusSidebarProvider.viewType, provider, {
+			webviewOptions: { retainContextWhenHidden: true },
+		}),
+		vscode.commands.registerCommand('cerberusAi.openSidebar', () => {
+			void vscode.commands.executeCommand('workbench.view.extension.cerberusAi');
+		}),
+	);
+}
+
+function registerInlineCompletions(
+	context: vscode.ExtensionContext,
+	config: CerberusConfig,
+	client: CerberusClient,
+): void {
+	const provider = new CerberusInlineCompletionProvider(client, config);
+	context.subscriptions.push(
+		vscode.languages.registerInlineCompletionItemProvider({ pattern: '**' }, provider),
+	);
+}
+
+function registerCommands(
+	context: vscode.ExtensionContext,
+	config: CerberusConfig,
+	client: CerberusClient,
+): void {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('cerberusAi.signIn', async () => {
 			const choice = await vscode.window.showQuickPick(
@@ -92,6 +126,10 @@ function registerCommands(context: vscode.ExtensionContext, config: CerberusConf
 			}
 			await vscode.window.showInformationMessage(`Cerberus IDE: ${models.length} model bulundu.`);
 		}),
+
+		vscode.commands.registerCommand('cerberusAi.inlineEdit', async () => {
+			await runInlineEdit(client, config);
+		}),
 	);
 }
 
@@ -113,9 +151,6 @@ async function registerProviders(
 	};
 
 	if (!lm.registerLanguageModelChatProvider && !lm.registerChatModelProvider) {
-		void vscode.window.showWarningMessage(
-			'Cerberus IDE: language model API bu sürümde aktif değil.',
-		);
 		return;
 	}
 
