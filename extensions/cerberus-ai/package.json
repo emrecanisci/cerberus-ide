@@ -108,6 +108,11 @@
         "command": "cerberusAi.inlineEdit",
         "title": "Cerberus AI: Inline Edit",
         "category": "Cerberus AI"
+      },
+      {
+        "command": "cerberusAi.showLogs",
+        "title": "Cerberus AI: Show Logs",
+        "category": "Cerberus AI"
       }
     ],
     "keybindings": [

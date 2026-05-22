@@ -5,6 +5,7 @@ import { CerberusClient, CerberusAuthError, ChatMessage } from './client';
 import { CerberusConfig, CerberusModelDescriptor } from './config';
 import { CerberusAgent, approveDiffViaQuickPick, summarizeToolInput } from './agent';
 import { resolveContext } from './context-resolver';
+import { logError, logInfo } from './log';
 
 interface ActivityItem {
 	readonly icon: string;
@@ -106,8 +107,7 @@ export class CerberusSidebarProvider implements vscode.WebviewViewProvider {
 			case 'signIn':
 				await vscode.commands.executeCommand('cerberusAi.signIn');
 				await this.bootstrap();
-				return;
-			case 'newChat':
+				return;			case 'newChat':
 				this.conversation.length = 0;
 				this.view.webview.postMessage({ type: 'cleared' });
 				return;
@@ -225,6 +225,7 @@ export class CerberusSidebarProvider implements vscode.WebviewViewProvider {
 			this.view.webview.postMessage({ type: 'error', message: 'Hiç model yok. Panele gir ve bir model ekle.' });
 			return;
 		}
+		logInfo(`runChat: model=${model.id} mode=${this.currentMode} text=${text.slice(0, 80)}`);
 
 		this.view.webview.postMessage({ type: 'userMessage', text });
 		const resolved = await resolveContext(text);
@@ -274,6 +275,7 @@ export class CerberusSidebarProvider implements vscode.WebviewViewProvider {
 			});
 		} catch (err: any) {
 			if (err instanceof CerberusAuthError) await this.notifySignedOut();
+			logError('runChat failed', err);
 			this.view.webview.postMessage({ type: 'error', message: err?.message ?? String(err) });
 		}
 	}

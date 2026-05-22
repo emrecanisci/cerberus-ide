@@ -337,6 +337,8 @@
 			input.style.height = Math.min(input.scrollHeight, 120) + 'px';
 			send.disabled = !input.value.trim();
 		});
+		// Always allow click on the send button — disabled state set above.
+		input.dispatchEvent(new Event('input'));
 		input.addEventListener('keydown', (e) => {
 			if (e.key === 'Enter' && !e.shiftKey) {
 				e.preventDefault();
@@ -361,6 +363,8 @@
 			input.style.height = 'auto';
 			send.disabled = true;
 			vscode.postMessage({ type: 'send', text });
+			// safety: re-enable after 60s if backend never replies
+			setTimeout(() => { if (send.disabled && !currentAssistantNode) send.disabled = false; }, 60_000);
 		}
 
 		function showChat() {
@@ -412,6 +416,7 @@
 						msg.recentActivity.forEach(appendActivity);
 					}
 					if (msg.authState === 'signed-out') showAuthBanner();
+					else hideAuthBanner();
 					break;
 				case 'modelChanged':
 					currentModel = msg.model;
@@ -503,10 +508,22 @@
 		function showAuthBanner() {
 			authBanner.hidden = false;
 			authBanner.className = 'banner warn';
-			authBanner.innerHTML = '<div>Cerberus IDE oturumu yok. Devam etmek için giriş yap.</div><button id="signInBtn">Giriş yap</button>';
+			authBanner.innerHTML = '<div><strong>Cerberus AI girişi yok.</strong><br/>Devam etmek için panele kullanıcı adı/parola ile giriş yap.</div><button id="signInBtn">Giriş yap</button>';
 			document.getElementById('signInBtn').onclick = () => vscode.postMessage({ type: 'signIn' });
+			// Hide actions while signed out.
+			actionsSection.hidden = true;
+			// Disable composer.
+			input.placeholder = 'Önce giriş yap, sonra Cerberus\'a sor…';
+			send.disabled = true;
+			input.disabled = true;
 		}
-		function hideAuthBanner() { authBanner.hidden = true; authBanner.innerHTML = ''; }
+		function hideAuthBanner() {
+			authBanner.hidden = true;
+			authBanner.innerHTML = '';
+			actionsSection.hidden = false;
+			input.placeholder = 'Ask Cerberus AI anything...';
+			input.disabled = false;
+		}
 
 		vscode.postMessage({ type: 'ready' });
 	</script>
