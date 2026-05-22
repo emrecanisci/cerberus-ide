@@ -63,19 +63,18 @@ jobs:
       - name: Load brand env
         shell: bash
         run: |
-          # brand.env içeriğini job env'ine kopyala. Her satır KEY="value"
-          # şeklinde — tırnakları soyalım, böylece downstream script'lerde
-          # ${VAR} her yerinde literal " olmaz.
-          while IFS= read -r line; do
-            line="${line#export }"
-            [[ -z "$line" || "$line" == \#* ]] && continue
-            key="${line%%=*}"
-            value="${line#*=}"
-            # leading/trailing single+double quotes
-            value="${value%\"}"; value="${value#\"}"
-            value="${value%\'}"; value="${value#\'}"
-            echo "${key}=${value}" >> "$GITHUB_ENV"
-          done < brand.env
+          # brand.env'i source et — bash quote'ları doğru çözer.
+          # Sonra ilgili değişkenleri GITHUB_ENV'a quote'suz yaz.
+          set -a
+          source brand.env
+          set +a
+          for key in APP_NAME BINARY_NAME ORG_NAME GH_REPO_PATH ASSETS_REPOSITORY TUNNEL_APP_NAME \
+                     CERBERUS_HOMEPAGE_URL CERBERUS_DOCS_URL CERBERUS_AI_API_BASE_URL; do
+            value="${!key:-}"
+            if [[ -n "$value" ]]; then
+              echo "${key}=${value}" >> "$GITHUB_ENV"
+            fi
+          done
           echo "Brand loaded:"
           grep -E '^(APP_NAME|BINARY_NAME|ORG_NAME|GH_REPO_PATH|CERBERUS_AI_API_BASE_URL)=' "$GITHUB_ENV" || true
 
