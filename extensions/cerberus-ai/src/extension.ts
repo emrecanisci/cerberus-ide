@@ -6,7 +6,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	const config = new CerberusConfig(context.secrets);
 
 	registerCommands(context, config);
-	registerProviders(context, config);
+	await registerProviders(context, config);
 
 	context.subscriptions.push(
 		config.onSecretChange(() => {
@@ -78,10 +78,10 @@ function registerCommands(
 	);
 }
 
-function registerProviders(
+async function registerProviders(
 	context: vscode.ExtensionContext,
 	config: CerberusConfig,
-): void {
+): Promise<void> {
 	const lm = vscode.lm as unknown as {
 		registerLanguageModelChatProvider?: (
 			selector: { vendor: string; family?: string; id?: string },
@@ -105,7 +105,11 @@ function registerProviders(
 		return;
 	}
 
-	for (const model of config.models) {
+	// Live list (admin panel) wins; fall back to product.json baked defaults.
+	const remote = await config.fetchModelsFromGateway();
+	const models = remote && remote.length > 0 ? remote : config.models;
+
+	for (const model of models) {
 		const provider = new CerberusChatProvider(model, config);
 
 		const disposable = lm.registerLanguageModelChatProvider

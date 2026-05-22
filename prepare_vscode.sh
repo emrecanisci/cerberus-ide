@@ -42,7 +42,7 @@ setpath_json() {
 : "${CERBERUS_ISSUES_URL:=https://github.com/${GH_REPO_PATH}/issues/new}"
 : "${CERBERUS_LICENSE_URL:=https://github.com/${GH_REPO_PATH}/blob/master/LICENSE}"
 : "${CERBERUS_RELEASES_URL:=https://github.com/${GH_REPO_PATH}/releases}"
-: "${CERBERUS_AI_API_BASE_URL:=https://api.aiwebmodel.com/v1}"
+: "${CERBERUS_AI_API_BASE_URL:=https://ide.aiwebmodel.com/v1}"
 
 setpath "product" "checksumFailMoreInfoUrl" "${CERBERUS_DOCS_URL}/checksum"
 setpath "product" "documentationUrl" "${CERBERUS_DOCS_URL}"

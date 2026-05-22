@@ -16,7 +16,7 @@ interface CerberusProductJson {
 }
 
 const SECRET_KEY = 'cerberusAi.apiKey';
-const FALLBACK_API_BASE_URL = 'https://api.aiwebmodel.com/v1';
+const FALLBACK_API_BASE_URL = 'https://ide.aiwebmodel.com/v1';
 const FALLBACK_MODELS: ReadonlyArray<CerberusModelDescriptor> = [
 	{
 		id: 'cerberus-coder',
@@ -75,6 +75,50 @@ export class CerberusConfig {
 			return fromProduct;
 		}
 		return FALLBACK_MODELS;
+	}
+
+	/**
+	 * Pull the live model list from the Cerberus admin gateway. Returns
+	 * `undefined` if anything goes wrong — callers should fall back to
+	 * `models` (the bake-time defaults).
+	 */
+	async fetchModelsFromGateway(): Promise<ReadonlyArray<CerberusModelDescriptor> | undefined> {
+		const apiKey = await this.getApiKey();
+		if (!apiKey) {
+			return undefined;
+		}
+		try {
+			const response = await fetch(`${this.apiBaseUrl}/models`, {
+				method: 'GET',
+				headers: { 'Authorization': `Bearer ${apiKey}` },
+			});
+			if (!response.ok) {
+				return undefined;
+			}
+			const json = await response.json() as {
+				data?: Array<{
+					id: string;
+					display_name?: string;
+					owned_by?: string;
+					capabilities?: string[];
+					max_input_tokens?: number;
+					max_output_tokens?: number;
+				}>;
+			};
+			if (!json.data) {
+				return undefined;
+			}
+			return json.data.map(entry => ({
+				id: entry.id,
+				label: entry.display_name ?? entry.id,
+				family: entry.owned_by ?? 'cerberus',
+				capabilities: entry.capabilities ?? ['chat', 'completions'],
+				maxInputTokens: entry.max_input_tokens,
+				maxOutputTokens: entry.max_output_tokens,
+			}));
+		} catch {
+			return undefined;
+		}
 	}
 
 	async getApiKey(): Promise<string | undefined> {
