@@ -7,10 +7,6 @@ name: Build Cerberus IDE — Windows
 on:
   workflow_dispatch:
     inputs:
-      release_version:
-        description: 'Cerberus version (örn. 0.1.0)'
-        required: true
-        default: '0.1.0'
       vscode_arch:
         description: 'Architecture'
         required: true
@@ -30,7 +26,8 @@ jobs:
       VSCODE_QUALITY: stable
       OS_NAME: windows
       VSCODE_ARCH: ${{ inputs.vscode_arch }}
-      RELEASE_VERSION: ${{ inputs.release_version }}
+      # RELEASE_VERSION boş — get_repo.sh upstream'den otomatik çeksin (Microsoft tag'i ile uyumlu olmak zorunda).
+      # UI'da görünen sürüm string'i prepare_vscode.sh içinde package.json'a yazılır.
       SHOULD_BUILD: 'yes'
       SHOULD_BUILD_REH: 'no'
       DISABLE_UPDATE: 'yes'
@@ -92,7 +89,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: cerberus-${{ inputs.release_version }}-windows-${{ inputs.vscode_arch }}
+          name: cerberus-windows-${{ inputs.vscode_arch }}
           path: |
             assets/*.exe
             assets/*.zip
