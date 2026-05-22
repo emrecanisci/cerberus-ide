@@ -20,20 +20,25 @@ permissions:
 jobs:
   build:
     name: Windows ${{ inputs.vscode_arch }}
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
     env:
       VSCODE_QUALITY: stable
       OS_NAME: windows
       VSCODE_ARCH: ${{ inputs.vscode_arch }}
-      # RELEASE_VERSION boş — get_repo.sh upstream'den otomatik çeksin (Microsoft tag'i ile uyumlu olmak zorunda).
-      # UI'da görünen sürüm string'i prepare_vscode.sh içinde package.json'a yazılır.
       SHOULD_BUILD: 'yes'
       SHOULD_BUILD_REH: 'no'
+      SHOULD_BUILD_REH_WEB: 'no'
       DISABLE_UPDATE: 'yes'
       CI_BUILD: 'no'
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      # VS Code preinstall.ts requires this env var on windows runners.
+      # windows-2022 ships VS 2022 BuildTools at this fixed path.
+      vs2022_install: 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools'
 
     steps:
       - name: Checkout
