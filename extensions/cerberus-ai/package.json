@@ -1,0 +1,76 @@
+{
+  "name": "cerberus-ai",
+  "displayName": "Cerberus AI",
+  "description": "Built-in AI provider for Cerberus. Routes chat and completions to AiwebModel's model gateway.",
+  "version": "0.1.0",
+  "publisher": "aiwebmodel",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "enabledApiProposals": [
+    "chatProvider",
+    "languageModelSystem"
+  ],
+  "categories": [
+    "AI",
+    "Chat",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Cerberus AI",
+      "properties": {
+        "cerberusAi.apiBaseUrl": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Base URL for the Cerberus AI gateway. Leave empty to use the value baked into `product.json` (`cerberusAiApiBaseUrl`)."
+        },
+        "cerberusAi.defaultModel": {
+          "type": "string",
+          "default": "cerberus-coder",
+          "description": "Model id to select by default in chat surfaces."
+        },
+        "cerberusAi.requestTimeoutMs": {
+          "type": "number",
+          "default": 120000,
+          "description": "Per-request timeout in milliseconds."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "cerberusAi.signIn",
+        "title": "Cerberus AI: Sign In",
+        "category": "Cerberus AI"
+      },
+      {
+        "command": "cerberusAi.signOut",
+        "title": "Cerberus AI: Sign Out",
+        "category": "Cerberus AI"
+      },
+      {
+        "command": "cerberusAi.setApiBaseUrl",
+        "title": "Cerberus AI: Set API Base URL",
+        "category": "Cerberus AI"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/vscode": "^1.95.0",
+    "typescript": "^5.4.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aiwebmodel/cerberus.git"
+  }
+}
