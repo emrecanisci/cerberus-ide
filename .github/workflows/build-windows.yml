@@ -1,0 +1,101 @@
+name: Build Cerberus IDE — Windows
+
+# Manuel tetiklenir (Actions sekmesinden "Run workflow"). Çıkan installer
+# her runda "artifact" olarak iner; kalıcı release istiyorsan workflow
+# tamamlandıktan sonra elle `gh release create` veya panele upload yap.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Cerberus version (örn. 0.1.0)'
+        required: true
+        default: '0.1.0'
+      vscode_arch:
+        description: 'Architecture'
+        required: true
+        default: 'x64'
+        type: choice
+        options: [x64, arm64]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Windows ${{ inputs.vscode_arch }}
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      VSCODE_QUALITY: stable
+      OS_NAME: windows
+      VSCODE_ARCH: ${{ inputs.vscode_arch }}
+      RELEASE_VERSION: ${{ inputs.release_version }}
+      SHOULD_BUILD: 'yes'
+      SHOULD_BUILD_REH: 'no'
+      DISABLE_UPDATE: 'yes'
+      CI_BUILD: 'no'
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install build tooling
+        shell: bash
+        run: |
+          choco install --no-progress --confirm jq 7zip innosetup
+          echo "${ProgramFiles}/Inno Setup 6" >> $GITHUB_PATH
+
+      - name: Load brand env
+        shell: bash
+        run: |
+          # brand.env değerlerini job env'ine kopyala
+          while IFS= read -r line; do
+            [[ -z "$line" || "$line" == \#* ]] && continue
+            echo "${line#export }" >> $GITHUB_ENV
+          done < brand.env
+          echo "Brand loaded:"
+          grep -E '^(APP_NAME|BINARY_NAME|ORG_NAME|GH_REPO_PATH|CERBERUS_AI_API_BASE_URL)=' $GITHUB_ENV || true
+
+      - name: Fetch upstream VS Code source
+        shell: bash
+        run: |
+          ./get_repo.sh
+
+      - name: Build Cerberus
+        shell: bash
+        run: |
+          ./build.sh
+
+      - name: Package installer + zip
+        shell: bash
+        run: |
+          ./prepare_assets.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cerberus-${{ inputs.release_version }}-windows-${{ inputs.vscode_arch }}
+          path: |
+            assets/*.exe
+            assets/*.zip
+            assets/*.msi
+          if-no-files-found: error
+          retention-days: 14
