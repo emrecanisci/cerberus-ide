@@ -36,6 +36,11 @@ jobs:
       CI_BUILD: 'no'
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      # MSI'yi atla — VSCodium'un wxs şablonu hâlâ VSCODIUM.EXE ismini
+      # arıyor, brand patch'i Cerberus için tam çalışmıyor. Inno Setup
+      # .exe ve portable .zip yeterli.
+      SHOULD_BUILD_MSI: 'no'
+      SHOULD_BUILD_MSI_NOUP: 'no'
       # VS Code preinstall.ts requires this env var on windows runners.
       # windows-2022 ships VS 2022 BuildTools at this fixed path.
       vs2022_install: 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools'
