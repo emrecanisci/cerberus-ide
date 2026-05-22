@@ -63,13 +63,21 @@ jobs:
       - name: Load brand env
         shell: bash
         run: |
-          # brand.env değerlerini job env'ine kopyala
+          # brand.env içeriğini job env'ine kopyala. Her satır KEY="value"
+          # şeklinde — tırnakları soyalım, böylece downstream script'lerde
+          # ${VAR} her yerinde literal " olmaz.
           while IFS= read -r line; do
+            line="${line#export }"
             [[ -z "$line" || "$line" == \#* ]] && continue
-            echo "${line#export }" >> $GITHUB_ENV
+            key="${line%%=*}"
+            value="${line#*=}"
+            # leading/trailing single+double quotes
+            value="${value%\"}"; value="${value#\"}"
+            value="${value%\'}"; value="${value#\'}"
+            echo "${key}=${value}" >> "$GITHUB_ENV"
           done < brand.env
           echo "Brand loaded:"
-          grep -E '^(APP_NAME|BINARY_NAME|ORG_NAME|GH_REPO_PATH|CERBERUS_AI_API_BASE_URL)=' $GITHUB_ENV || true
+          grep -E '^(APP_NAME|BINARY_NAME|ORG_NAME|GH_REPO_PATH|CERBERUS_AI_API_BASE_URL)=' "$GITHUB_ENV" || true
 
       - name: Fetch upstream VS Code source
         shell: bash
