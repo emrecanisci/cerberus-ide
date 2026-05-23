@@ -24,7 +24,7 @@
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
-      "activitybar": [
+      "auxiliarybar": [
         {
           "id": "cerberusAi",
           "title": "Cerberus AI",

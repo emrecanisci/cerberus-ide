@@ -35,50 +35,14 @@ function registerSidebar(context: vscode.ExtensionContext, config: CerberusConfi
 		vscode.window.registerWebviewViewProvider(CerberusSidebarProvider.viewType, provider, {
 			webviewOptions: { retainContextWhenHidden: true },
 		}),
-		vscode.commands.registerCommand('cerberusAi.openSidebar', () => {
-			void vscode.commands.executeCommand('workbench.view.extension.cerberusAi');
+		vscode.commands.registerCommand('cerberusAi.openSidebar', async () => {
+			// Force aux bar visible, then focus our view (it lives in auxiliarybar).
+			await vscode.commands.executeCommand('workbench.action.openAuxiliaryBar')
+				.then(undefined, () => undefined);
+			await vscode.commands.executeCommand('cerberusAi.sidebar.focus')
+				.then(undefined, () => undefined);
 		}),
 	);
-	void ensureRightSidebarPlacement(context);
-}
-
-/**
- * Cerberus IDE'de sidebar varsayılan olarak sağ (auxiliary) bar'da olmalı.
- * VS Code'un viewsContainer şeması auxiliarybar'ı resmi destekleme için
- * activitybar'a kayıt edip ilk açılışta programatik taşıma yapıyoruz.
- * Kullanıcı sonra istediği yere taşıyabilir.
- */
-async function ensureRightSidebarPlacement(context: vscode.ExtensionContext): Promise<void> {
-	const KEY = 'cerberusAi.placedOnRight';
-	if (context.globalState.get<boolean>(KEY)) return;
-
-	// Wait for workbench to finish booting + view system to register us.
-	await new Promise(resolve => setTimeout(resolve, 1500));
-
-	try {
-		// Make sure the auxiliary side bar is visible so the user sees the move.
-		await vscode.commands.executeCommand('workbench.action.openAuxiliaryBar')
-			.then(undefined, () => undefined);
-
-		// Try multiple known move commands across VS Code versions.
-		const tries: Array<[string, any]> = [
-			['vscode.moveViews', { viewIds: ['cerberusAi.sidebar'], destinationId: 'workbench.view.extension.auxiliarybar' }],
-			['_workbench.moveView', { viewId: 'cerberusAi.sidebar', destinationId: 'workbench.view.extension.auxiliarybar' }],
-			['workbench.action.moveView', { viewId: 'cerberusAi.sidebar', destinationId: 'workbench.view.extension.auxiliarybar' }],
-		];
-		for (const [cmd, arg] of tries) {
-			try {
-				await vscode.commands.executeCommand(cmd, arg);
-				break;
-			} catch { /* try next */ }
-		}
-
-		// Bring our view back to focus inside the (now right-side) container.
-		await vscode.commands.executeCommand('cerberusAi.sidebar.focus')
-			.then(undefined, () => undefined);
-	} catch { /* user can drag manually */ }
-
-	await context.globalState.update(KEY, true);
 }
 
 function registerInlineCompletions(
